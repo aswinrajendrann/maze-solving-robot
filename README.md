@@ -1,23 +1,56 @@
 # Autonomous Maze Solving Robot
 
-A robot capable of autonomously navigating and solving a maze in real time using sensor-based obstacle detection and tuned motor control.
+An autonomous robot built with Arduino Uno that navigates and solves an unknown maze in real time using the **Left-Wall Following algorithm**, ultrasonic obstacle detection, and a PID-tuned motor control loop.
+
+Built as a team mini-project (ECD334) at Government College of Engineering Kannur, under the guidance of Dr. Ajith K K.
 
 ## 🎯 Problem Statement
-Demonstrates core robotics principles — real-time decision-making, path planning, and precise motor control — applied to autonomous navigation challenges.
+Design a low-cost, sensor-based robot capable of autonomously navigating an unknown maze without human intervention, demonstrating core principles of embedded systems, sensor integration, and real-time control.
 
 ## 🛠️ Tech Stack
-- **Hardware:** Arduino Uno
-- **Language:** C
-- **Control:** PID Motor Control Loop
+- **Microcontroller:** Arduino Uno (ATmega328P)
+- **Sensors:** 2x HC-SR04 Ultrasonic Sensors (front + left)
+- **Motor Driver:** L298N (Dual H-Bridge)
+- **Actuators:** DC Motors (left & right wheel)
+- **Power:** 12V Li-ion battery (motors) + separate supply for Arduino
+- **Language:** C/C++ (Arduino IDE)
 
 ## ⚙️ How It Works
-1. Real-time obstacle detection identifies walls and paths within the maze
-2. Path-planning logic determines the optimal route as the robot moves
-3. A PID-tuned motor control loop ensures smooth, accurate movement and minimizes trajectory deviation
+
+The robot uses the **Left-Wall Following algorithm**:
+
+1. Two ultrasonic sensors (front-facing and left-facing) continuously measure distance to the nearest wall/obstacle
+2. **Decision logic:**
+   - If no wall detected on the left → turn left
+   - Else if a wall is too close ahead → turn right
+   - Else → continue following the left wall, using **PID control** to maintain an ideal distance from it
+3. A PID loop (Kp=3.3, Ki=0, Kd=5) continuously corrects left/right motor PWM values to minimize deviation from the ideal wall-following distance, smoothing out the robot's trajectory compared to a simple on/off (bang-bang) correction approach
+4. The L298N motor driver receives PWM signals from the Arduino and drives the two DC motors accordingly
+
+## 📐 System Architecture
+
+```
+Environment (Maze) → Ultrasonic Sensors → Arduino Uno (decision logic + PID)
+                                                  ↓
+                                          L298N Motor Driver
+                                                  ↓
+                                    Left DC Motor    Right DC Motor
+```
 
 ## 📊 Results
-- Consistently completes maze navigation in **under 90 seconds**
-- **~25% reduction** in trajectory deviation compared to a bang-bang controller baseline
+- Successfully built and tested a working physical prototype (see `/images`)
+- Robot reliably follows the left wall and navigates turns within a physical maze model
+- PID-based correction produced smoother wall-following behavior than a simple threshold-based (bang-bang) approach during testing
+- *Note: Precise quantitative timing/deviation metrics were not formally logged during testing — results are based on observed physical trials.*
 
-## 📁 Project Status
-Built as an academic robotics project, Jan–Jul 2025.
+## 📁 Files
+- `maze_solver.ino` — Full Arduino source code (sensor reading, PID wall-following, turn logic)
+- `/docs` — Project report (block diagram, circuit diagram, flowchart, component datasheets)
+
+## 👥 Team
+Built collaboratively by a 4-member team: Aswin Rajendran, Ebin Seby, Elizabeth Abraham, Goutham Das.
+
+## 🔭 Future Scope
+- Replace wall-following with optimal pathfinding (A*/Dijkstra) for shortest-path solving
+- Add reinforcement learning for adaptive navigation across different maze layouts
+- Integrate Bluetooth/Wi-Fi for remote monitoring and control via a mobile app
