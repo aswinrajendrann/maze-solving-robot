@@ -29,28 +29,9 @@ The robot uses the **Left-Wall Following algorithm**:
 
 ## 📐 System Architecture
 
-```
-Environment (Maze) → Ultrasonic Sensors → Arduino Uno (decision logic + PID)
-                                                  ↓
-                                          L298N Motor Driver
-                                                  ↓
-                                    Left DC Motor    Right DC Motor
-```
+Environment (Maze) → Ultrasonic Sensors → Arduino Uno (decision logic + PID) → L298N Motor Driver → Left DC Motor + Right DC Motor
 
 ## 📊 Results
-- Successfully built and tested a working physical prototype (see `/images`)
+- Successfully built and tested a working physical prototype
 - Robot reliably follows the left wall and navigates turns within a physical maze model
-- PID-based correction produced smoother wall-following behavior than a simple threshold-based (bang-bang) approach during testing
-- *Note: Precise quantitative timing/deviation metrics were not formally logged during testing — results are based on observed physical trials.*
-
-## 📁 Files
-- `maze_solver.ino` — Full Arduino source code (sensor reading, PID wall-following, turn logic)
-- `/docs` — Project report (block diagram, circuit diagram, flowchart, component datasheets)
-
-## 👥 Team
-Built collaboratively by a 4-member team: Aswin Rajendran, Ebin Seby, Elizabeth Abraham, Goutham Das.
-
-## 🔭 Future Scope
-- Replace wall-following with optimal pathfinding (A*/Dijkstra) for shortest-path solving
-- Add reinforcement learning for adaptive navigation across different maze layouts
-- Integrate Bluetooth/Wi-Fi for remote monitoring and control via a mobile app
+- PID-based correction produced smoother wall-following behavior than a simple threshold-based
