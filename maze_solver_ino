@@ -2,72 +2,58 @@
 // Uses PWM for motor control
 
 // ---------- Pin definitions ----------
-// Ultrasonic sensors
 #define TRIGGER_PINL A3   // Left sensor trigger pin
 #define ECHO_PINL    A0   // Left sensor echo pin
 #define TRIGGER_PINF A4   // Front sensor trigger pin
 #define ECHO_PINF    A1   // Front sensor echo pin
 #define MAX_DISTANCE 200  // Maximum distance we want to ping for (in centimeters)
 
-// Motor control pins
-const int RIGHT_MOTOR_FORWARD  = 2; // PWM pins
+const int RIGHT_MOTOR_FORWARD  = 2;
 const int RIGHT_MOTOR_BACKWARD = 3;
-const int LEFT_MOTOR_FORWARD   = 4; // PWM pins
+const int LEFT_MOTOR_FORWARD   = 4;
 const int LEFT_MOTOR_BACKWARD  = 5;
 
-// ---------- PID constants ----------
-float Kp = 3.3;  // Proportional gain
-float Ki = 0;     // Integral gain
-float Kd = 5;     // Derivative gain
+float Kp = 3.3;
+float Ki = 0;
+float Kd = 5;
 
 float previousError = 0;
 float integral = 0;
 
-// ---------- Constants ----------
-const int WALL_THRESHOLD     = 15;  // Distance to wall in cm
-const int FORWARD_THRESHOLD  = 20;  // Distance to forward wall to trigger turn
-const int IDEAL_LEFT_DISTANCE = 8;  // Ideal distance to left wall in cm
-const int BASE_SPEED  = 80;   // Base PWM value (0-255)
-const int TURN_SPEED  = 100;  // PWM value for turning
-const int CORRECTION_FACTOR = 3; // Correction factor for wall following
+const int WALL_THRESHOLD     = 15;
+const int FORWARD_THRESHOLD  = 20;
+const int IDEAL_LEFT_DISTANCE = 8;
+const int BASE_SPEED  = 80;
+const int TURN_SPEED  = 100;
+const int CORRECTION_FACTOR = 3;
 
-// Function to move forward briefly before turning
 void moveForwardBriefly() {
-  analogWrite(LEFT_MOTOR_BACKWARD, BASE_SPEED);  // Left motor forward (IN3 = LOW, IN4 = HIGH)
+  analogWrite(LEFT_MOTOR_BACKWARD, BASE_SPEED);
   digitalWrite(LEFT_MOTOR_FORWARD, LOW);
-
-  analogWrite(RIGHT_MOTOR_BACKWARD, BASE_SPEED); // Right motor forward (IN1 = LOW, IN2 = HIGH)
+  analogWrite(RIGHT_MOTOR_BACKWARD, BASE_SPEED);
   digitalWrite(RIGHT_MOTOR_FORWARD, LOW);
-
-  delay(150); // Move forward for a short time (adjust as needed)
+  delay(150);
   stopMotors();
-  delay(50);  // Small pause after moving forward
+  delay(50);
 }
 
 void setup() {
   Serial.begin(9600);
-
-  // Initialize ultrasonic sensor pins
   pinMode(TRIGGER_PINL, OUTPUT);
   pinMode(ECHO_PINL, INPUT);
   pinMode(TRIGGER_PINF, OUTPUT);
   pinMode(ECHO_PINF, INPUT);
-
-  // Initialize motor control pins
   pinMode(RIGHT_MOTOR_FORWARD, OUTPUT);
   pinMode(RIGHT_MOTOR_BACKWARD, OUTPUT);
   pinMode(LEFT_MOTOR_FORWARD, OUTPUT);
   pinMode(LEFT_MOTOR_BACKWARD, OUTPUT);
-
-  delay(2000); // Wait a moment before starting
+  delay(2000);
 }
 
 void loop() {
-  // Measure distances using ultrasonic sensors
   int frontDistance = getDistance(TRIGGER_PINF, ECHO_PINF);
   int leftDistance  = getDistance(TRIGGER_PINL, ECHO_PINL);
 
-  // Debug output
   Serial.print("Front: ");
   Serial.print(frontDistance);
   Serial.print(" cm, Left: ");
@@ -75,36 +61,28 @@ void loop() {
   Serial.println(" cm");
 
   if (leftDistance > WALL_THRESHOLD) {
-    // No left wall, turn left
     Serial.println("No left wall, turning left");
     turnLeft();
   }
   else if (frontDistance < FORWARD_THRESHOLD) {
-    // Wall ahead, turn right
     Serial.println("Wall ahead, turning right");
     turnRight();
   }
   else {
-    // Follow left wall
     followLeftWall(leftDistance);
   }
 
-  delay(100); // Small delay to stabilize readings
+  delay(100);
 }
 
-// Function to measure distance using ultrasonic sensor
 int getDistance(int trigPin, int echoPin) {
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
-
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
 
   long duration = pulseIn(echoPin, HIGH);
-
-  // Speed of sound = 343 m/s = 0.0343 cm/microsecond
-  // Distance = (time x speed) / 2
   int distance = duration * 0.0343 / 2;
 
   if (distance > MAX_DISTANCE || distance <= 0) {
@@ -113,11 +91,9 @@ int getDistance(int trigPin, int echoPin) {
   return distance;
 }
 
-// Function to move forward with PID-based correction to follow left wall
 void followLeftWall(int leftDistance) {
   int error = leftDistance - IDEAL_LEFT_DISTANCE;
 
-  // PID calculations
   integral += error;
   float derivative = error - previousError;
   float correction = Kp * error + Ki * integral + Kd * derivative;
@@ -129,10 +105,9 @@ void followLeftWall(int leftDistance) {
   leftSpeed  = constrain(leftSpeed, 0, 255);
   rightSpeed = constrain(rightSpeed, 0, 255);
 
-  analogWrite(LEFT_MOTOR_BACKWARD, leftSpeed);   // Left: IN3 = LOW, IN4 = HIGH
+  analogWrite(LEFT_MOTOR_BACKWARD, leftSpeed);
   digitalWrite(LEFT_MOTOR_FORWARD, LOW);
-
-  analogWrite(RIGHT_MOTOR_BACKWARD, rightSpeed); // Right: IN1 = LOW, IN2 = HIGH
+  analogWrite(RIGHT_MOTOR_BACKWARD, rightSpeed);
   digitalWrite(RIGHT_MOTOR_FORWARD, LOW);
 
   Serial.print("Following wall - Left PWM: ");
@@ -141,43 +116,36 @@ void followLeftWall(int leftDistance) {
   Serial.println(rightSpeed);
 }
 
-// Function to turn left
 void turnLeft() {
   stopMotors();
   delay(50);
   moveForwardBriefly();
 
-  analogWrite(LEFT_MOTOR_FORWARD, TURN_SPEED);   // Left motor reverse: IN3 = HIGH, IN4 = LOW
+  analogWrite(LEFT_MOTOR_FORWARD, TURN_SPEED);
   digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
-
-  analogWrite(RIGHT_MOTOR_BACKWARD, TURN_SPEED); // Right motor forward: IN1 = LOW, IN2 = HIGH
+  analogWrite(RIGHT_MOTOR_BACKWARD, TURN_SPEED);
   digitalWrite(RIGHT_MOTOR_FORWARD, LOW);
 
-  delay(100); // ~90-degree turn (needs calibration)
-
+  delay(100);
   stopMotors();
   delay(50);
 }
 
-// Function to turn right
 void turnRight() {
   integral = 0;
   stopMotors();
   delay(50);
 
-  analogWrite(LEFT_MOTOR_BACKWARD, TURN_SPEED);  // Left motor forward: IN3 = LOW, IN4 = HIGH
+  analogWrite(LEFT_MOTOR_BACKWARD, TURN_SPEED);
   digitalWrite(LEFT_MOTOR_FORWARD, LOW);
-
-  analogWrite(RIGHT_MOTOR_FORWARD, TURN_SPEED);  // Right motor reverse: IN1 = HIGH, IN2 = LOW
+  analogWrite(RIGHT_MOTOR_FORWARD, TURN_SPEED);
   digitalWrite(RIGHT_MOTOR_BACKWARD, LOW);
 
-  delay(150); // ~90-degree turn (needs calibration)
-
+  delay(150);
   stopMotors();
   delay(200);
 }
 
-// Function to stop motors
 void stopMotors() {
   digitalWrite(LEFT_MOTOR_FORWARD, LOW);
   digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
